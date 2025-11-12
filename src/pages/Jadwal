@@ -1,0 +1,176 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Plus, Trash2, CheckCircle2, Clock } from "lucide-react";
+
+const Jadwal = () => {
+  const [jadwalList, setJadwalList] = useState([
+    {
+      id: 1,
+      pasien: "Budi Santoso",
+      dokter: "Dr. Ahmad",
+      tanggal: "2025-11-13",
+      jam: "09:00",
+      status: "Terjadwal",
+    },
+    {
+      id: 2,
+      pasien: "Siti Nurhaliza",
+      dokter: "Dr. Siti",
+      tanggal: "2025-11-13",
+      jam: "10:30",
+      status: "Selesai",
+    },
+  ]);
+
+  const [formData, setFormData] = useState({
+    pasien: "",
+    dokter: "",
+    tanggal: "",
+    jam: "",
+  });
+
+  const handleAddJadwal = () => {
+    if (formData.pasien && formData.dokter && formData.tanggal && formData.jam) {
+      setJadwalList([
+        ...jadwalList,
+        {
+          id: Date.now(),
+          ...formData,
+          status: "Terjadwal",
+        },
+      ]);
+      setFormData({ pasien: "", dokter: "", tanggal: "", jam: "" });
+    }
+  };
+
+  const handleDeleteJadwal = (id: number) => {
+    setJadwalList(jadwalList.filter((j) => j.id !== id));
+  };
+
+  const getStatusIcon = (status: string) => {
+    return status === "Selesai" ? (
+      <CheckCircle2 className="h-4 w-4 text-green-500" />
+    ) : (
+      <Clock className="h-4 w-4 text-blue-500" />
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Jadwal Praktik</h1>
+          <p className="text-gray-500 mt-2">
+            Kelola jadwal konsultasi pasien
+          </p>
+        </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Buat Jadwal
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Buat Jadwal Baru</DialogTitle>
+              <DialogDescription>
+                Masukkan detail jadwal konsultasi
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Nama Pasien"
+                value={formData.pasien}
+                onChange={(e) =>
+                  setFormData({ ...formData, pasien: e.target.value })
+                }
+              />
+              <Input
+                placeholder="Nama Dokter"
+                value={formData.dokter}
+                onChange={(e) =>
+                  setFormData({ ...formData, dokter: e.target.value })
+                }
+              />
+              <Input
+                type="date"
+                value={formData.tanggal}
+                onChange={(e) =>
+                  setFormData({ ...formData, tanggal: e.target.value })
+                }
+              />
+              <Input
+                type="time"
+                value={formData.jam}
+                onChange={(e) =>
+                  setFormData({ ...formData, jam: e.target.value })
+                }
+              />
+              <Button onClick={handleAddJadwal} className="w-full">
+                Simpan
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Pasien</TableHead>
+              <TableHead>Dokter</TableHead>
+              <TableHead>Tanggal</TableHead>
+              <TableHead>Jam</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {jadwalList.map((jadwal) => (
+              <TableRow key={jadwal.id}>
+                <TableCell>{jadwal.pasien}</TableCell>
+                <TableCell>{jadwal.dokter}</TableCell>
+                <TableCell>{jadwal.tanggal}</TableCell>
+                <TableCell>{jadwal.jam}</TableCell>
+                <TableCell className="flex items-center gap-2">
+                  {getStatusIcon(jadwal.status)}
+                  {jadwal.status}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteJadwal(jadwal.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+};
+
+export default Jadwal;
