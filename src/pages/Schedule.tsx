@@ -3,18 +3,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Calendar, Clock, User, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockDoctors, mockAppointments } from '@/lib/mock-data';
+import { useDoctors } from '@/hooks/useDoctors';
+import { useAppointments } from '@/hooks/useAppointments';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Schedule = () => {
+  const { data: doctors, isLoading: doctorsLoading } = useDoctors();
+  const { data: appointments, isLoading: appointmentsLoading } = useAppointments();
+  
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-  const timeSlots = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
+  const today = new Date().toISOString().split('T')[0];
+  const todayAppointments = appointments?.filter(apt => apt.appointment_date === today) || [];
 
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-card-foreground">Jadwal & Janji Temu</h1>
@@ -34,13 +39,12 @@ const Schedule = () => {
           </TabsList>
 
           <TabsContent value="calendar" className="space-y-4">
-            {/* Calendar Header */}
             <Card className="shadow-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Februari 2025
+                    {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button variant="outline" size="icon">
@@ -66,11 +70,6 @@ const Schedule = () => {
                       className="aspect-square p-2 rounded-lg border hover:bg-accent transition-colors text-sm"
                     >
                       <div className="font-medium">{i + 1}</div>
-                      {(i + 1) % 7 === 0 && (
-                        <div className="text-xs text-primary mt-1">
-                          {Math.floor(Math.random() * 5) + 1} janji
-                        </div>
-                      )}
                     </button>
                   ))}
                 </div>
@@ -82,38 +81,43 @@ const Schedule = () => {
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle>Janji Temu Hari Ini</CardTitle>
-                <CardDescription>Senin, 20 Februari 2025</CardDescription>
+                <CardDescription>{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {mockAppointments.map((apt) => (
-                    <div key={apt.id} className="p-4 rounded-lg border bg-gradient-to-r from-primary/5 to-accent/5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary text-primary-foreground font-bold">
-                            {apt.time.split(':')[0]}
-                          </div>
+                  {appointmentsLoading ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <Skeleton key={i} className="h-24 w-full" />
+                    ))
+                  ) : todayAppointments.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      Tidak ada janji temu hari ini
+                    </div>
+                  ) : (
+                    todayAppointments.map((apt) => (
+                      <div key={apt.id} className="p-4 rounded-lg border bg-gradient-to-r from-primary/5 to-accent/5">
+                        <div className="flex items-center justify-between">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold">{apt.patientName}</span>
-                              <Badge variant="outline">{apt.time}</Badge>
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{apt.patients?.name}</span>
                             </div>
-                            <div className="text-sm text-muted-foreground flex items-center gap-2">
-                              <User className="h-3 w-3" />
-                              {apt.doctorName}
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>{apt.appointment_time}</span>
                             </div>
-                            <div className="text-sm text-muted-foreground">{apt.complaint}</div>
+                            <p className="text-sm text-muted-foreground">{apt.complaint}</p>
+                          </div>
+                          <div className="text-right space-y-2">
+                            <p className="text-sm font-medium">{apt.doctors?.name}</p>
+                            <Badge variant={apt.status === 'scheduled' ? 'default' : apt.status === 'completed' ? 'secondary' : 'destructive'}>
+                              {apt.status}
+                            </Badge>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={apt.status === 'scheduled' ? 'default' : 'secondary'}>
-                            {apt.status === 'scheduled' ? 'Terjadwal' : apt.status}
-                          </Badge>
-                          <Button variant="outline" size="sm">Detail</Button>
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -121,48 +125,51 @@ const Schedule = () => {
 
           <TabsContent value="doctors" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {mockDoctors.map((doctor) => (
-                <Card key={doctor.id} className="shadow-card">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          {doctor.name.split(' ')[1]?.charAt(0) || 'D'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <CardTitle className="text-lg">{doctor.name}</CardTitle>
-                        <CardDescription>{doctor.specialization}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="text-sm font-medium">Jadwal Praktik:</div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {doctor.schedule.map((schedule, index) => (
-                          <div key={index} className="flex items-center gap-2 p-2 rounded-lg bg-muted">
-                            <Clock className="h-4 w-4 text-primary" />
-                            <div className="text-xs">
-                              <div className="font-medium">{schedule.day}</div>
-                              <div className="text-muted-foreground">
-                                {schedule.startTime} - {schedule.endTime}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="pt-3 border-t">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Slot tersedia hari ini:</span>
-                          <span className="font-medium text-primary">{timeSlots.length - 3} slot</span>
+              {doctorsLoading ? (
+                Array(2).fill(0).map((_, i) => (
+                  <Skeleton key={i} className="h-64 w-full" />
+                ))
+              ) : doctors?.length === 0 ? (
+                <div className="col-span-2 text-center text-muted-foreground py-8">
+                  Tidak ada data dokter
+                </div>
+              ) : (
+                doctors?.map((doctor) => (
+                  <Card key={doctor.id} className="shadow-card">
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarFallback>{doctor.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <CardTitle>{doctor.name}</CardTitle>
+                          <CardDescription>{doctor.specialization}</CardDescription>
                         </div>
                       </div>
-                      <Button className="w-full" variant="outline">Lihat Jadwal Detail</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium">Jadwal Praktek:</div>
+                        {doctor.doctor_schedules?.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">Tidak ada jadwal</p>
+                        ) : (
+                          doctor.doctor_schedules?.map((schedule: any) => (
+                            <div key={schedule.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
+                              <span className="text-sm font-medium">{schedule.day}</span>
+                              <span className="text-sm text-muted-foreground">
+                                {schedule.start_time} - {schedule.end_time}
+                              </span>
+                              <Badge variant={schedule.available ? 'default' : 'secondary'}>
+                                {schedule.available ? 'Tersedia' : 'Tidak Tersedia'}
+                              </Badge>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
         </Tabs>
