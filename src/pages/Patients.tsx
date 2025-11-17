@@ -1,38 +1,53 @@
+import { useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Search, Plus, Download, Filter, Eye, Edit, Trash2, Phone, Mail, MapPin } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, Search, Plus, Download, Filter, Eye, Edit, Trash2, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { mockPatients } from '@/lib/mock-data';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { usePatients } from '@/hooks/usePatients';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const Patients = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data: patients, isLoading, error } = usePatients();
+
+  const filteredPatients = patients?.filter(patient => 
+    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    patient.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    patient.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  const activePatients = patients?.filter(p => p.status === 'active').length || 0;
+  const thisMonth = patients?.filter(p => {
+    const regDate = new Date(p.registration_date);
+    const now = new Date();
+    return regDate.getMonth() === now.getMonth() && regDate.getFullYear() === now.getFullYear();
+  }).length || 0;
+
   const stats = [
-    { label: 'Total Pasien', value: mockPatients.length, color: 'text-primary' },
-    { label: 'Pasien Aktif', value: mockPatients.filter(p => p.status === 'active').length, color: 'text-success' },
-    { label: 'Pasien Baru Bulan Ini', value: 15, color: 'text-accent' },
-    { label: 'Kunjungan Hari Ini', value: 8, color: 'text-warning' },
+    { label: 'Total Pasien', value: patients?.length || 0, color: 'text-primary' },
+    { label: 'Pasien Aktif', value: activePatients, color: 'text-success' },
+    { label: 'Pasien Baru Bulan Ini', value: thisMonth, color: 'text-accent' },
+    { label: 'Kunjungan Hari Ini', value: 0, color: 'text-warning' },
   ];
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <p className="text-destructive">Error memuat data: {error.message}</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-card-foreground">Data Pasien</h1>
@@ -44,19 +59,19 @@ const Patients = () => {
           </Button>
         </div>
 
-        {/* Stats */}
         <div className="grid gap-4 md:grid-cols-4">
           {stats.map((stat, index) => (
             <Card key={index} className="shadow-card">
               <CardContent className="pt-6">
                 <div className="text-sm text-muted-foreground">{stat.label}</div>
-                <div className={`text-3xl font-bold ${stat.color} mt-2`}>{stat.value}</div>
+                <div className={`text-3xl font-bold ${stat.color} mt-2`}>
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : stat.value}
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Filters & Search */}
         <Card className="shadow-card">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -80,6 +95,8 @@ const Patients = () => {
               <Input
                 placeholder="Cari pasien berdasarkan nama, ID, atau nomor telepon..."
                 className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </CardHeader>
@@ -98,73 +115,82 @@ const Patients = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockPatients.map((patient) => (
-                    <TableRow key={patient.id}>
-                      <TableCell className="font-mono text-xs">{patient.id}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {patient.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{patient.name}</div>
-                            <div className="text-sm text-muted-foreground flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {patient.address.split(',')[0]}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1 text-sm">
-                            <Phone className="h-3 w-3" />
-                            {patient.phone}
-                          </div>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Mail className="h-3 w-3" />
-                            {patient.email}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{patient.age} tahun</TableCell>
-                      <TableCell>
-                        <div className="max-w-[200px] truncate text-sm">
-                          {patient.complaint}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={patient.status === 'active' ? 'default' : 'secondary'}>
-                          {patient.status === 'active' ? 'Aktif' : 'Tidak Aktif'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              ⋮
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-background">
-                            <DropdownMenuItem className="gap-2">
-                              <Eye className="h-4 w-4" />
-                              Lihat Detail
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-2">
-                              <Edit className="h-4 w-4" />
-                              Edit Data
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-2 text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                              Hapus
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                  {isLoading ? (
+                    Array(5).fill(0).map((_, i) => (
+                      <TableRow key={i}>
+                        {Array(7).fill(0).map((_, j) => (
+                          <TableCell key={j}>
+                            <Skeleton className="h-4 w-full" />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : filteredPatients.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        Tidak ada data pasien
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    filteredPatients.map((patient) => (
+                      <TableRow key={patient.id}>
+                        <TableCell className="font-medium">{patient.id.slice(0, 8)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarFallback>{patient.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{patient.name}</div>
+                              {patient.ktp && <div className="text-xs text-muted-foreground">KTP: {patient.ktp}</div>}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1 text-sm">
+                              <Phone className="h-3 w-3 text-muted-foreground" />
+                              {patient.phone}
+                            </div>
+                            {patient.email && (
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Mail className="h-3 w-3" />
+                                {patient.email}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{patient.age} tahun</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{patient.complaint}</TableCell>
+                        <TableCell>
+                          <Badge variant={patient.status === 'active' ? 'default' : 'secondary'}>
+                            {patient.status === 'active' ? 'Aktif' : 'Tidak Aktif'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">Aksi</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem className="gap-2">
+                                <Eye className="h-4 w-4" />
+                                Lihat Detail
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-2">
+                                <Edit className="h-4 w-4" />
+                                Edit Data
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-2 text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                                Hapus
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
