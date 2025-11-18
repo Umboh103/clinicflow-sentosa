@@ -5,15 +5,21 @@ import { Users, Search, Plus, Download, Filter, Eye, Edit, Trash2, Phone, Mail }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { usePatients } from '@/hooks/usePatients';
+import { usePatients, useDeletePatient } from '@/hooks/usePatients';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { PatientFormDialog } from '@/components/forms/PatientFormDialog';
+import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
 
 const Patients = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [formOpen, setFormOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const { data: patients, isLoading, error } = usePatients();
+  const deletePatient = useDeletePatient();
 
   const filteredPatients = patients?.filter(patient => 
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,7 +59,7 @@ const Patients = () => {
             <h1 className="text-3xl font-bold text-card-foreground">Data Pasien</h1>
             <p className="text-muted-foreground mt-1">Kelola data dan informasi pasien klinik</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => { setSelectedPatient(null); setFormOpen(true); }}>
             <Plus className="h-4 w-4" />
             Tambah Pasien Baru
           </Button>
@@ -168,25 +174,14 @@ const Patients = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">Aksi</Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="gap-2">
-                                <Eye className="h-4 w-4" />
-                                Lihat Detail
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2">
-                                <Edit className="h-4 w-4" />
-                                Edit Data
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                                Hapus
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <div className="flex gap-2 justify-end">
+                            <Button size="sm" variant="outline" onClick={() => { setSelectedPatient(patient); setFormOpen(true); }}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => { setSelectedPatient(patient); setDeleteOpen(true); }}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -197,6 +192,26 @@ const Patients = () => {
           </CardContent>
         </Card>
       </div>
+
+      <PatientFormDialog 
+        open={formOpen} 
+        onOpenChange={setFormOpen} 
+        patient={selectedPatient} 
+      />
+      
+      <DeleteConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={() => {
+          if (selectedPatient) {
+            deletePatient.mutate(selectedPatient.id);
+            setDeleteOpen(false);
+          }
+        }}
+        title="Hapus Pasien"
+        description={`Apakah Anda yakin ingin menghapus data pasien ${selectedPatient?.name}? Tindakan ini tidak dapat dibatalkan.`}
+        isLoading={deletePatient.isPending}
+      />
     </Layout>
   );
 };

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Plus, Search, AlertTriangle } from 'lucide-react';
+import { Package, Plus, Search, AlertTriangle, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useMedicines } from '@/hooks/useMedicines';
@@ -9,9 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { MedicineFormDialog } from '@/components/forms/MedicineFormDialog';
 
 const Medicines = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [formOpen, setFormOpen] = useState(false);
+  const [selectedMedicine, setSelectedMedicine] = useState<any>(null);
   const { data: medicines, isLoading, error } = useMedicines();
 
   const filteredMedicines = medicines?.filter(med =>
@@ -48,7 +51,7 @@ const Medicines = () => {
             <h1 className="text-3xl font-bold text-card-foreground">Stok Obat & Inventori</h1>
             <p className="text-muted-foreground mt-1">Kelola inventaris obat dan stok apotek</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => { setSelectedMedicine(null); setFormOpen(true); }}>
             <Plus className="h-4 w-4" />
             Tambah Obat Baru
           </Button>
@@ -169,7 +172,10 @@ const Medicines = () => {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button size="sm" variant="outline">Update Stok</Button>
+                            <Button size="sm" variant="outline" onClick={() => { setSelectedMedicine(medicine); setFormOpen(true); }}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );
@@ -181,6 +187,12 @@ const Medicines = () => {
           </CardContent>
         </Card>
       </div>
+
+      <MedicineFormDialog 
+        open={formOpen} 
+        onOpenChange={setFormOpen} 
+        medicine={selectedMedicine} 
+      />
     </Layout>
   );
 };
