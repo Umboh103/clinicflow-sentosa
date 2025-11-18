@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, User, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, User, Plus, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useDoctors } from '@/hooks/useDoctors';
@@ -8,8 +9,11 @@ import { useAppointments } from '@/hooks/useAppointments';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AppointmentFormDialog } from '@/components/forms/AppointmentFormDialog';
 
 const Schedule = () => {
+  const [formOpen, setFormOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const { data: doctors, isLoading: doctorsLoading } = useDoctors();
   const { data: appointments, isLoading: appointmentsLoading } = useAppointments();
   
@@ -25,7 +29,7 @@ const Schedule = () => {
             <h1 className="text-3xl font-bold text-card-foreground">Jadwal & Janji Temu</h1>
             <p className="text-muted-foreground mt-1">Kelola jadwal dokter dan appointment pasien</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => { setSelectedAppointment(null); setFormOpen(true); }}>
             <Plus className="h-4 w-4" />
             Buat Janji Baru
           </Button>
@@ -97,7 +101,7 @@ const Schedule = () => {
                     todayAppointments.map((apt) => (
                       <div key={apt.id} className="p-4 rounded-lg border bg-gradient-to-r from-primary/5 to-accent/5">
                         <div className="flex items-center justify-between">
-                          <div className="space-y-1">
+                          <div className="space-y-1 flex-1">
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-muted-foreground" />
                               <span className="font-medium">{apt.patients?.name}</span>
@@ -113,6 +117,10 @@ const Schedule = () => {
                             <Badge variant={apt.status === 'scheduled' ? 'default' : apt.status === 'completed' ? 'secondary' : 'destructive'}>
                               {apt.status}
                             </Badge>
+                            <Button size="sm" variant="outline" className="w-full mt-2" onClick={() => { setSelectedAppointment(apt); setFormOpen(true); }}>
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -174,6 +182,12 @@ const Schedule = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <AppointmentFormDialog 
+        open={formOpen} 
+        onOpenChange={setFormOpen} 
+        appointment={selectedAppointment} 
+      />
     </Layout>
   );
 };
