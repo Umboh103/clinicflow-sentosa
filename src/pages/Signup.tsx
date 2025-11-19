@@ -6,45 +6,46 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Activity, Mail, Lock } from 'lucide-react';
+import { Activity, Mail, Lock, User, Phone } from 'lucide-react';
 
-const Login = () => {
+const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { signup } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast.error('Password tidak cocok');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('Password minimal 6 karakter');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const result = await login(email, password);
+      const result = await signup(email, password, name, phone);
       if (result.success) {
-        toast.success('Login berhasil!');
-        navigate('/dashboard');
+        toast.success('Registrasi berhasil! Silakan login.');
+        navigate('/login');
       } else {
-        toast.error(result.error || 'Email atau password salah');
+        toast.error(result.error || 'Registrasi gagal');
       }
     } catch (error) {
-      toast.error('Terjadi kesalahan saat login');
+      toast.error('Terjadi kesalahan saat registrasi');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const demoAccounts = [
-    { role: 'Admin', email: 'admin@sentosa.com' },
-    { role: 'Dokter', email: 'sarah@sentosa.com' },
-    { role: 'Apoteker', email: 'michael@sentosa.com' },
-    { role: 'Pemilik', email: 'owner@sentosa.com' },
-    { role: 'Pasien', email: 'john@example.com' },
-  ];
-
-  const handleDemoLogin = (email: string) => {
-    setEmail(email);
-    setPassword('password123');
   };
 
   return (
@@ -65,40 +66,56 @@ const Login = () => {
             
             <div className="space-y-3 pt-4">
               <h2 className="text-xl font-semibold text-foreground">
-                Sistem Manajemen Klinik Modern
+                Bergabung dengan Sistem Kami
               </h2>
               <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-accent" />
+                  Akses ke sistem manajemen klinik
+                </li>
                 <li className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-accent" />
                   Pendaftaran pasien digital
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-accent" />
-                  Manajemen jadwal dokter
+                  Rekam medis elektronik
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-accent" />
-                  Resep elektronik & apotek
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-accent" />
-                  Pembayaran & pelaporan
+                  Manajemen jadwal dan resep
                 </li>
               </ul>
             </div>
           </div>
         </div>
 
-        {/* Right side - Login Form */}
+        {/* Right side - Signup Form */}
         <Card className="shadow-2xl border-0">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Masuk ke Sistem</CardTitle>
+            <CardTitle className="text-2xl font-bold">Buat Akun Baru</CardTitle>
             <CardDescription>
-              Masukkan kredensial Anda untuk mengakses dashboard
+              Daftarkan diri Anda untuk mengakses sistem
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nama Lengkap</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Masukkan nama lengkap"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -114,7 +131,22 @@ const Login = () => {
                   />
                 </div>
               </div>
-              
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Nomor Telepon (Opsional)</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="08xxxxxxxxxx"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -122,43 +154,49 @@ const Login = () => {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Minimal 6 karakter"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10"
                     required
+                    minLength={6}
                   />
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Memproses...' : 'Masuk'}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Ulangi password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10"
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Memproses...' : 'Daftar'}
               </Button>
 
               <div className="text-center text-sm text-muted-foreground">
-                Belum punya akun?{' '}
-                <Link to="/signup" className="text-primary hover:underline font-medium">
-                  Daftar di sini
+                Sudah punya akun?{' '}
+                <Link to="/login" className="text-primary hover:underline font-medium">
+                  Masuk di sini
                 </Link>
               </div>
             </form>
-
-            <div className="mt-6 pt-6 border-t">
-              <p className="text-sm text-muted-foreground mb-3">Akun Demo (Password: password123)</p>
-              <div className="grid grid-cols-2 gap-2">
-                {demoAccounts.map((account) => (
-                  <Button
-                    key={account.email}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDemoLogin(account.email)}
-                    className="text-xs"
-                  >
-                    {account.role}
-                  </Button>
-                ))}
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -166,4 +204,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Signup;
