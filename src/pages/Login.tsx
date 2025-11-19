@@ -144,7 +144,17 @@ const Login = () => {
             </form>
 
             <div className="mt-6 pt-6 border-t">
-              <p className="text-sm text-muted-foreground mb-3">Akun Demo (Password: password123)</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-muted-foreground">Akun Demo (Password: password123)</p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => navigate('/setup-demo')}
+                  className="text-xs h-auto p-0"
+                >
+                  Setup Akun Demo
+                </Button>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 {demoAccounts.map((account) => (
                   <Button
