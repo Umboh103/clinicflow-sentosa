@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import SetupDemo from "./pages/SetupDemo";
 import Dashboard from "./pages/Dashboard";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/setup-demo" element={<SetupDemo />} />
             <Route
               path="/dashboard"
               element={
